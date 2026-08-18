@@ -1,0 +1,15 @@
+# 依赖与构建产物（装回来/重建即可，不进仓库）
+node_modules/
+web/dist/
+
+# 存档库：含账号与玩家存档，绝不能进仓库（生产用 NiumA_DATA_DIR 另放）
+server/data/
+backups/
+
+# 本地杂项
+*.log
+.env
+.DS_Store
+tmp/*.png
+tmp/*.jpeg
+tmp/*.jpg

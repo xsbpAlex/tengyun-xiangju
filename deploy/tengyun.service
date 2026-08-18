@@ -1,0 +1,23 @@
+# 腾云香局 · systemd 单元（开机自启 + 崩溃自动拉起）
+# 安装位置：/etc/systemd/system/tengyun.service
+
+[Unit]
+Description=Tengyun Xiangju (腾云香局 game server)
+After=network.target
+
+[Service]
+Type=simple
+# 代码目录（install.sh 默认装到 /opt/tengyun，改了这里同步改）
+WorkingDirectory=/opt/tengyun
+ExecStart=/usr/bin/env node server/src/index.js
+# 存档库目录（备份脚本 backup.sh 按这个路径备份；不需要独立目录就注释掉）
+Environment=NiumA_DATA_DIR=/opt/tengyun-data
+Environment=PORT=3001
+Restart=always
+RestartSec=3
+# 安全护栏（朋友局够用）
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

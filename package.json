@@ -1,0 +1,19 @@
+{
+  "name": "tengyun-xiangju",
+  "version": "0.1.0",
+  "private": true,
+  "description": "腾云香局 —— 仙朝衙门打工人放置挂机游戏",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev -w @tengyun/server",
+    "dev:web": "npm run dev -w @tengyun/web",
+    "build": "npm run build -w @tengyun/web",
+    "start": "node server/src/index.js"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}
