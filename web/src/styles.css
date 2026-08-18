@@ -1136,3 +1136,103 @@ button.chip.rebirth-btn:hover { filter: brightness(1.25); }
   white-space: nowrap;
 }
 .heirloom-row:hover .heirloom-act { color: var(--gold); border-color: var(--gold); }
+
+/* ---------- M9 入职文书：选房前的一页背景故事 ---------- */
+.intro-scroll {
+  max-width: 560px;
+  text-align: left;
+}
+.intro-scroll .title { text-align: center; }
+.intro-line {
+  margin: 14px 0;
+  font-size: 14.5px;
+  line-height: 2;
+  text-indent: 2em;
+  color: var(--text);
+}
+.intro-scroll .btn { display: block; margin: 20px auto 6px; }
+.intro-scroll .dim-tip { text-align: center; margin-top: 8px; }
+
+/* ---------- M9 新手引导：spotlight 压暗挖孔 + 浮卡 ---------- */
+.guide-root { position: fixed; inset: 0; z-index: 900; }
+/* 挖孔高亮：本体透明，靠超大 box-shadow 压暗其余全屏；本体盖住目标，引导期间禁交互 */
+.guide-hole {
+  position: absolute;
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 9999px rgba(6, 12, 13, 0.66),
+    0 0 0 2px var(--gold, #c9a227);
+  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
+}
+/* 目标区块抬升描边，配合挖孔形成「 spotlight 」 */
+.guide-target {
+  position: relative;
+  z-index: 901;
+  pointer-events: none; /* 引导期间只听不讲，交互由挖孔层挡住 */
+}
+.guide-card {
+  position: absolute;
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  background: var(--panel);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.25);
+  padding: 14px 16px 12px;
+  z-index: 902;
+  transition: opacity 0.2s ease;
+}
+.guide-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.guide-card-title { font-size: 15px; font-weight: 700; color: var(--teal); }
+.guide-card-count { font-size: 12px; color: var(--dim); white-space: nowrap; }
+.guide-card-text {
+  margin: 8px 0 12px;
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: var(--text);
+}
+.guide-card-btns { display: flex; align-items: center; gap: 8px; }
+.guide-card-spacer { flex: 1; }
+/* 回看入口：挨着音效开关再往左一个身位 */
+.guide-toggle { right: 112px; font-size: 14px; }
+
+/* ---------- M9.5 博士支线「灯下」：邸报条入口小字 + 线索回顾卷轴（只埋不揭） ---------- */
+.dibao-wrap.has-lamp .dibao-bar { padding-right: 66px; } /* 给灯下入口让位，不与全录按钮叠 */
+.lamp-entry {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  padding: 1px 9px;
+  font-size: 11px;
+  color: var(--gold, #c9a227);
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--gold, #c9a227) 55%, transparent);
+  border-radius: 999px;
+  cursor: pointer;
+  animation: lamp-flicker 3.2s ease-in-out infinite;
+}
+.lamp-entry:hover { background: color-mix(in srgb, var(--gold, #c9a227) 12%, transparent); }
+/* 灯焰微晃：暗线入口的一点微光，不喧宾夺主 */
+@keyframes lamp-flicker {
+  0%, 100% { opacity: 0.75; box-shadow: 0 0 0 rgba(201, 162, 39, 0); }
+  50% { opacity: 1; box-shadow: 0 0 10px rgba(201, 162, 39, 0.35); }
+}
+.lamp-scroll .lamp-hint { margin-bottom: 10px; }
+.lamp-clue {
+  margin: 12px 0;
+  padding-left: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--gold, #c9a227) 45%, transparent);
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--dim);
+}
+.lamp-text { margin: 12px 0; font-size: 14px; line-height: 2; }
+.lamp-go { margin: 6px 0 10px; }
+

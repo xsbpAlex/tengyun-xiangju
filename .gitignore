@@ -13,3 +13,6 @@ backups/
 tmp/*.png
 tmp/*.jpeg
 tmp/*.jpg
+
+# 现实组织信息风险文件：含真实部门数据，绝不上传（M9.8 上线前用户确认剔除）
+部门.xls

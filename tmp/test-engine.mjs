@@ -23,8 +23,8 @@ import {
 import { ladderFloorOfZ } from '../server/src/game/realm.js';
 import { judgeTrait, heirloomValue, heirloomBonusOf, HEIRLOOM_TRAITS } from '../server/src/game/heirlooms.js';
 import { LADDER_LINES, LADDER_MILESTONE_LINES, pickLadderLine } from '../server/src/game/ladderLines.js';
-import { VISITS_PER_DAY } from '../server/src/game/visits.js';
-import { DAILY_EVENTS, EV_COMMON_COUNT, EV_DEPT_COUNT, EV_TOTAL_COUNT, EV_NEED_CHECKS, initEvDay, tickDailyEvents } from '../server/src/game/events.js';
+import { VISITS_PER_DAY, LAMP_CLUES } from '../server/src/game/visits.js';
+import { DAILY_EVENTS, EV_COMMON_COUNT, EV_DEPT_COUNT, EV_NPC_COUNT, EV_TOTAL_COUNT, EV_NEED_CHECKS, initEvDay, tickDailyEvents } from '../server/src/game/events.js';
 import { DEPARTMENTS } from '../server/src/game/departments.js';
 import {
   JIANZHENG_CANDIDATES,
@@ -167,8 +167,8 @@ const tick = (s, ms = TICK) => engine.advance(s, s.lastTickAt + ms);
   eq(titleBonuses(['lingxiao_jueding']).xinliDrain, 0.05, 'F7 凌霄绝顶词条 心力消耗−5%');
   eq(titleBonuses(['xuanan_kexing']).contrib, 0.01, 'F8 悬案克星词条 贡献+1%');
   eq(titleBonuses(['jianzheng_zhengduo']).salary, 0.01, 'F8b 监正争夺者词条 薪酬+1%');
-  ok(EXTRA_TITLES.length === 5 && ALL_TITLES.length === 15, 'F9 称号名册 10+5=15 枚');
-  ok(Object.keys(TITLE_WORDS).length === 15, 'F10 每枚称号都有词条配置');
+  ok(EXTRA_TITLES.length === 6 && ALL_TITLES.length === 16, 'F9 称号名册 10+6=16 枚');
+  ok(Object.keys(TITLE_WORDS).length === 15 && !TITLE_WORDS.dengxia_tongxing, 'F10 词条配置 15 枚（灯下同行纯展示无词条）');
 }
 
 // ---------- G. 自动切档与手动锁档 ----------
@@ -898,13 +898,13 @@ const tick = (s, ms = TICK) => engine.advance(s, s.lastTickAt + ms);
 
 // ---------- AA. M6.8 事件系统：库结构/轻奖无罚/每日调度/洗牌袋/跨天/入账 ----------
 {
-  // AA1 库结构：102 条 = 通用 32 + 十房各 7，gift 仅 contrib(5~15)/bank(mins=1) 两形态
-  eq(DAILY_EVENTS.length, EV_TOTAL_COUNT, 'AA1 事件库共 102 条');
+  // AA1 库结构：122 条 = 通用 32 + 十房各 7 + M9.8 具名 20，gift 仅 contrib(5~15)/bank(mins=1) 两形态
+  eq(DAILY_EVENTS.length, EV_TOTAL_COUNT, 'AA1 事件库共 122 条');
   eq(new Set(DAILY_EVENTS.map((e) => e.id)).size, EV_TOTAL_COUNT, 'AA1b id 全部唯一');
   eq(DAILY_EVENTS.filter((e) => e.dept === null).length, EV_COMMON_COUNT, 'AA1c 通用 32 条');
   for (const d of DEPARTMENTS) {
     eq(
-      DAILY_EVENTS.filter((e) => e.dept === d.id).length,
+      DAILY_EVENTS.filter((e) => e.dept === d.id && !e.npcId).length,
       EV_DEPT_COUNT,
       `AA1d ${d.id} 专属 7 条`,
     );
@@ -920,7 +920,7 @@ const tick = (s, ms = TICK) => engine.advance(s, s.lastTickAt + ms);
     'AA1f gift 只有 contrib(5~15)/bank(mins=1) 两形态',
   );
   const gifted = DAILY_EVENTS.filter((e) => e.gift).length;
-  ok(gifted >= 35 && gifted <= 42, `AA1g 带轻奖约四成（实际 ${gifted}/${EV_TOTAL_COUNT}）`);
+  ok(gifted >= 45 && gifted <= 52, `AA1g 带轻奖约四成（实际 ${gifted}/${EV_TOTAL_COUNT}）`);
 }
 {
   // AA1b 零惩罚红线：发满一日全程 bank/贡献只增不减
@@ -967,8 +967,8 @@ const tick = (s, ms = TICK) => engine.advance(s, s.lastTickAt + ms);
   let seed = 0.42;
   const rng = () => ((seed = (seed * 9301 + 49297) % 233280), seed / 233280);
   initEvDay(s, NOW, rng);
-  eq(new Set(s.evDay.cards).size, 36, 'AA2b 袋内唯一 id 36 个（通用合规 29 + 本房 7）');
-  ok(s.evDay.cards.length > 36, 'AA2b2 weight:2 条目带双副本，袋张数大于唯一数', `袋 ${s.evDay.cards.length} 张`);
+  eq(new Set(s.evDay.cards).size, 38, 'AA2b 袋内唯一 id 38 个（通用合规 29 + 本房 7 + 具名 2）');
+  ok(s.evDay.cards.length > 38, 'AA2b2 weight:2 条目带双副本，袋张数大于唯一数', `袋 ${s.evDay.cards.length} 张`);
   ok(
     s.evDay.cards.every((id) => {
       const ev = DAILY_EVENTS.find((e) => e.id === id);
@@ -1345,6 +1345,74 @@ const tick = (s, ms = TICK) => engine.advance(s, s.lastTickAt + ms);
   ok(!engine.fightJianzheng(s, 'yunzhang').ok && /此案已结/.test(engine.fightJianzheng(s, 'yunzhang').error), 'AF4h 结案后对局被拒');
   const r2 = engine.fightJianzheng(s, 'yunzhang');
   ok(!r2.ok, 'AF4i 重复对局守卫');
+}
+
+// ---------- AG. M9.5 博士支线回收「灯下」：集齐判定/授号/幂等/转生保留 ----------
+{
+  // AG1 线索不齐：走近被拒，不落任何痕迹
+  const s = fresh();
+  s.clues = ['bs1', 'bs2'];
+  const r = engine.collectLamp(s);
+  ok(!r.ok && /还没拼成一条路/.test(r.error), 'AG1 线索不齐被拒');
+  ok(!s.lampDone && !s.titles.includes(engine.LAMP_TITLE_ID), 'AG1b 被拒不落档不授号');
+}
+{
+  // AG2 集齐四条 → 授「灯下同行」纯展示称号 + 邸报留痕，零数值
+  const s = fresh();
+  s.clues = [...LAMP_CLUES];
+  const c0 = s.contribution;
+  const b0 = s.bank;
+  const r = engine.collectLamp(s);
+  ok(r.ok && r.already === false, 'AG2 集齐回收成功');
+  ok(s.lampDone === true && s.titles.includes(engine.LAMP_TITLE_ID), 'AG2b 置 lampDone 并授号');
+  eq(s.contribution, c0, 'AG2c 零贡献回礼（暗线不功利化）');
+  eq(s.bank, b0, 'AG2d 零薪酬回礼');
+  ok(!TITLE_WORDS[engine.LAMP_TITLE_ID], 'AG2e 称号无词条，纯展示');
+  ok(s.events.some((e) => e.type === 'milestone' && /灯下同行/.test(e.text)), 'AG2f 邸报授号留痕');
+}
+{
+  // AG3 幂等：收过再收不重授、不刷屏
+  const s = fresh();
+  s.clues = [...LAMP_CLUES];
+  engine.collectLamp(s);
+  const n0 = s.events.length;
+  const r = engine.collectLamp(s);
+  ok(r.ok && r.already === true, 'AG3 重复回收返回已收');
+  eq(s.titles.filter((t) => t === engine.LAMP_TITLE_ID).length, 1, 'AG3b 称号不重发');
+  eq(s.events.length, n0, 'AG3c 邸报不再刷屏');
+}
+{
+  // AG4 转生保留：线索跨周目不丢，二周目仍可走到灯下
+  const s = fresh();
+  s.fork = 'chose_stay';
+  s.clues = [...LAMP_CLUES];
+  const rb = engine.rebirth(s, 'stay', s.lastTickAt + TICK);
+  ok(rb.ok !== false, 'AG4 留任转生成立');
+  ok(LAMP_CLUES.every((id) => s.clues.includes(id)), 'AG4b 转生后四条线索仍在');
+  ok(!s.lampDone, 'AG4c 转生不重置支线进度字段');
+  const r = engine.collectLamp(s);
+  ok(r.ok && r.already === false, 'AG4d 二周目仍可回收');
+}
+
+// ---------- AH. M9.8 邸报本房化：每房 2 条具名同僚观察事件 ----------
+{
+  const bn = DAILY_EVENTS.filter((e) => e.npcId);
+  eq(bn.length, EV_NPC_COUNT, 'AH1 具名观察事件共 20 条');
+  for (const d of DEPARTMENTS) {
+    eq(bn.filter((e) => e.dept === d.id).length, 2, `AH1b ${d.id} 具名 2 条`);
+  }
+  ok(bn.every((e) => {
+    const n = NPCS.find((x) => x.id === e.npcId);
+    return n && n.dept === e.dept;
+  }), 'AH2 npcId 全部命中名册且房一致');
+  ok(bn.every((e) => !e.penalty), 'AH3 具名事件零惩罚（轻奖无罚口径不变）');
+  ok(bn.every((e) => !e.gift || (e.gift.type === 'contrib' && e.gift.n >= 5 && e.gift.n <= 15) || (e.gift.type === 'bank' && e.gift.mins === 1)), 'AH3b 轻奖两形态口径一致');
+  // 当日袋纳入：本房具名事件进袋（weight:2 双副本）
+  const s = fresh();
+  s.dept = 'qianyafang';
+  initEvDay(s, NOW);
+  ok(s.evDay.cards.includes('bn1') && s.evDay.cards.includes('bn2'), 'AH4 本房具名事件进当日袋');
+  ok(!s.evDay.cards.includes('bn3'), 'AH4b 他房具名事件不进袋');
 }
 
 console.log(`\n引擎测试：${pass} 过 / ${fail} 挂，共 ${pass + fail} 项`);

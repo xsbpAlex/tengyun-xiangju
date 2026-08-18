@@ -65,12 +65,20 @@ export const VISIT_EVENTS = [
   { id: 'xm3', dept: 'xingmingfang', gift: 'bank', text: '有位老刑名夜里审卷审到打盹，醒来说自己“梦判了一桩积案”。你陪他对了半天卷宗，他非要分你一份“协审茶水钱”。' },
   { id: 'xm4', dept: 'xingmingfang', text: '刑名房的卷宗架一尘不染，每卷系着红绳。新人问红绳何用，老人压低声音：“不是防卷散，是提醒自己——每卷底下，都压着别人的前程。”' },
 
-  // ---------- 博士暗线（4 条，散落各房，只埋不揭；clue 记入 state.clues，M7 回收） ----------
+  // ---------- 博士暗线（4 条，散落各房，只埋不揭；clue 记入 state.clues，M9.5 回收） ----------
   { id: 'bs1', dept: 'zhixiangfang', clue: true, text: '坊里的老人说，多年前有位博士主事，在坊里守过一夜的炉火。没人记得他守的是什么炉，只记得他天亮时说了句：“还在烧，就好。”' },
   { id: 'bs2', dept: 'jiqiaoge', clue: true, text: '阁中一位匠人收着一件没人认领的旧物，说是某位博士主事留下的，嘱咐“先放着”。问他放着做什么，匠人擦擦手：“他没说。可他都这么说了，总得放着。”' },
   { id: 'bs3', dept: 'lifang', clue: true, text: '吏房的旧名册里有一页折了角，上面一位博士主事的名字年年报“留任”。书办说：不是没人劝他走，是他自己把调令压在了最底下。' },
   { id: 'bs4', dept: 'chouyumsi', clue: true, text: '筹云司的老蓝图堆里，夹着一页不是蓝图的字条，字迹很淡，只有一句：“编外也是衙门的人——总得有人看着这盏灯。”落款处没有名字。' },
 ];
+
+// 博士暗线线索全集（M9.5 回收判定用）：集齐方可「走近那盏灯」
+export const LAMP_CLUES = ['bs1', 'bs2', 'bs3', 'bs4'];
+
+// 线索原文（M9.5 前端卷轴回顾用，顺序同 LAMP_CLUES）
+export const LAMP_CLUE_TEXTS = LAMP_CLUES.map(
+  (id) => VISIT_EVENTS.find((e) => e.id === id)?.text ?? ''
+);
 
 // 抽签：目标房的池子里随机，避开上一条读过的（池子只剩一条时除外）。r 由外部注入便于测试。
 export function pickVisitEvent(deptId, lastVisitId, r = Math.random()) {

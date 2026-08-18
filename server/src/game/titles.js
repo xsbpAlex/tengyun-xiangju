@@ -25,6 +25,8 @@ export const EXTRA_TITLES = [
   { id: 'xuanan_kexing', name: '悬案克星', flavor: '经手的悬案都结了。没人问他夜里熬了几盏灯。' },
   // M7.5 监正争夺战：三场全胜也坐不上那把椅子，唯争得「敢争」二字
   { id: 'jianzheng_zhengduo', name: '监正争夺者', flavor: '他争过那把空椅子。三场全胜，什么都没得到——除了看清那把椅子。' },
+  // M9.5 博士支线回收：暗线只埋不揭，纯展示称号，不进 TITLE_WORDS（零数值）
+  { id: 'dengxia_tongxing', name: '灯下同行', flavor: '有些事问不出答案，只是总得有人看着那盏灯。' },
 ];
 
 export const ALL_TITLES = [...QUEST_TITLES, ...EXTRA_TITLES];

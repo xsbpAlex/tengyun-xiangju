@@ -1,11 +1,11 @@
-// 一次性清理：把历史测试号（m55_/mig55_/m76e2e_/m75e2e_/m8e2e_ 前缀）重置为初始低配档，
+// 一次性清理：把历史测试号（m55_/mig55_/m76e2e_/m75e2e_/m8e2e_/m9shot_/m95e2e_/m98e2e_ 前缀）重置为初始低配档，
 // 防止满配滞留号把徽章测试号（z=364）挤出榜单前 15 窗口。真实账号前缀不匹配，零影响。
 import { DatabaseSync } from 'node:sqlite';
 import { defaultState } from '../server/src/game/engine.js';
 
 const db = new DatabaseSync('d:/niuma/server/data/game.db');
 const rows = db.prepare('SELECT a.id, a.username FROM accounts a').all();
-const hit = rows.filter((a) => /^(m55_|mig55_|m76e2e_|m75e2e_|m8e2e_)/.test(a.username));
+const hit = rows.filter((a) => /^(m55_|mig55_|m76e2e_|m75e2e_|m8e2e_|m9shot_|m95e2e_|m98e2e_)/.test(a.username));
 const ts = Date.now();
 for (const a of hit) {
   const st = defaultState(ts);

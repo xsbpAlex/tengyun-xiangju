@@ -14,7 +14,7 @@ import {
   daysBetween,
 } from './quests.js';
 import { QUEST_TITLES, titleBonuses, titleOf } from './titles.js';
-import { VISITS_PER_DAY } from './visits.js';
+import { VISITS_PER_DAY, LAMP_CLUES } from './visits.js';
 import { drawDeckEvent } from './npcevents.js';
 import { tickDailyEvents } from './events.js';
 import { forgeHeirloom, heirloomBonusOf, HEIRLOOM_TRAITS } from './heirlooms.js';
@@ -1000,4 +1000,21 @@ export function fightJianzheng(state, candidateId) {
     finale = JIANZHENG_FINAL_TEXT;
   }
   return { ok: true, win, text: win ? c.winText : c.loseText, finale };
+}
+
+// ---------- M9.5 博士支线回收「灯下」 ----------
+
+export const LAMP_TITLE_ID = 'dengxia_tongxing';
+
+// 走近那盏灯：串门集齐四条暗线（LAMP_CLUES）方可回收；授「灯下同行」纯展示称号，
+// 零回礼零数值——暗线只埋不揭，答案留白。幂等：收过不重授。旧档无 lampDone 即未收，零迁移。
+export function collectLamp(state) {
+  const clues = state.clues ?? [];
+  if (!LAMP_CLUES.every((id) => clues.includes(id))) {
+    return { ok: false, error: '灯还远着——你听来的闲话还没拼成一条路' };
+  }
+  if (state.lampDone) return { ok: true, already: true };
+  state.lampDone = true;
+  grantTitle(state, LAMP_TITLE_ID);
+  return { ok: true, already: false };
 }

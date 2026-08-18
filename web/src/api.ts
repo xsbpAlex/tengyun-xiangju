@@ -317,6 +317,9 @@ export interface GameConfig {
   // M7.5 监正争夺战
   jianzhengCandidates: JianzhengCandidate[]; // 三位候选（含 intro/胜负文案）
   jianzhengTitleId: string;
+  // M9.5 博士支线「灯下」
+  lampClues: string[]; // 线索 id 全集（集齐判定）
+  lampClueTexts: string[]; // 线索原文（卷轴回顾）
 }
 
 export interface GameState {
@@ -350,6 +353,7 @@ export interface GameState {
   visits?: { date: string; left: number };
   lastVisitId: string | null;
   clues: string[];
+  lampDone?: boolean; // M9.5 博士支线已回收（旧档缺省即未收）
   daily: DailyState | null;
   // M5
   xianjiStage: number;
@@ -494,6 +498,8 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ candidateId }),
     }),
+  // M9.5 博士支线：走近那盏灯
+  lamp: () => req<StatePayload & { already: boolean }>('/api/game/lamp', { method: 'POST' }),
   bagEquip: (idx: number) =>
     req<StatePayload & { equipped: GearItem; returned: GearItem | null }>('/api/game/bag/equip', {
       method: 'POST',

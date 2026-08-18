@@ -132,11 +132,44 @@ export const DAILY_EVENTS = [
   { id: 'xm_tiaowen', dept: 'xingmingfang', text: '一条律文的措辞改了三遍，终于说得通了。字斟句酌，为的是不让人猜。', weight: 2 },
   { id: 'xm_huajian', dept: 'xingmingfang', text: '会签的用印齐了，一处不缺。手续齐全，夜里睡得踏实。', gift: { type: 'contrib', n: 6 } },
   { id: 'xm_cunzhao', dept: 'xingmingfang', text: '旧案存了照，往后要翻随时能翻。留底的东西，平时不显，急时救命。', weight: 2 },
+
+  // ---------- M9.8 邸报本房化：每房 2 条具名同僚观察事件（npcId 关联名册；只奖不罚口径不变） ----------
+  // 签押房
+  { id: 'bn1', dept: 'qianyafang', npcId: 'npc9', text: '白帖书吏抄完最后一行，把笔搁得端端正正。他说：字要站直了，才能收工。', weight: 2 },
+  { id: 'bn2', dept: 'qianyafang', npcId: 'npc11', text: '备车老苍把明日的车马排了三版，哪版都留了余量。他说：路会变，车不能等。', gift: { type: 'contrib', n: 6 } },
+  // 户房
+  { id: 'bn3', dept: 'hufang', npcId: 'npc12', text: '大限日，全房屏息，执算主事照旧喝茶——只是这一日，他换了三回杯。', weight: 2 },
+  { id: 'bn4', dept: 'hufang', npcId: 'npc21', text: '守柜小吏的钥匙从东响到西，帮人翻出一册旧账。账找到了，他也算逛够了。', gift: { type: 'bank', mins: 1 } },
+  // 漕运司
+  { id: 'bn5', dept: 'caoyunsi', npcId: 'npc22', text: '八方的回单堆了半案，转输主事一页一页翻完，没起身。人在衙门坐，账从八方来。', gift: { type: 'contrib', n: 7 } },
+  { id: 'bn6', dept: 'caoyunsi', npcId: 'npc28', text: '过秤童子的秤杆压得稳稳当当。他说：秤平了，心才平。', weight: 2 },
+  // 刑名房
+  { id: 'bn7', dept: 'xingmingfang', npcId: 'npc30', text: '持律主事翻案卷翻得极慢，页页轻拿轻放。他说：每卷底下，都压着别人的前程。', weight: 2 },
+  { id: 'bn8', dept: 'xingmingfang', npcId: 'npc35', text: '校律童子把新律条对了三遍，标出两笔，都是可改可不改的——他自己划掉了一笔。', gift: { type: 'contrib', n: 6 } },
+  // 筹云司
+  { id: 'bn9', dept: 'chouyumsi', npcId: 'npc37', text: '烛影先生的灯又亮到深夜。蓝图都画在夜里——白天，要留着开会。', weight: 2 },
+  { id: 'bn10', dept: 'chouyumsi', npcId: 'npc38', text: '空谈真人把一盘大棋讲了半个时辰。散场时人人都觉得有道理，又都说不清是哪一步。', weight: 2 },
+  // 广闻司
+  { id: 'bn11', dept: 'guangwensi', npcId: 'npc41', text: '扬帆主事定了下月的船期，只说了一句话：风向等人，人不等风。', gift: { type: 'bank', mins: 1 } },
+  { id: 'bn12', dept: 'guangwensi', npcId: 'npc45', text: '吆喝郎今日喊的是「顺风」。全司的帆，都跟着换成了顺风的挂法。', weight: 2 },
+  // 吏房
+  { id: 'bn13', dept: 'lifang', npcId: 'npc46', text: '考成册送上去那天，执簿主事把自己的名字写在最末。册上本没有这一栏，他自己添的。', gift: { type: 'contrib', n: 8 } },
+  { id: 'bn14', dept: 'lifang', npcId: 'npc48', text: '递帖子的人在门外排队，白主簿的脸色一如往常。按规矩回的，两厢都没失体面。', weight: 2 },
+  // 机巧阁
+  { id: 'bn15', dept: 'jiqiaoge', npcId: 'npc52', text: '阁里的新机关试成了，墨匠人看完只说两个字：「还行。」——这已是他的最高评价。', gift: { type: 'contrib', n: 7 } },
+  { id: 'bn16', dept: 'jiqiaoge', npcId: 'npc53', text: '拾械童子把散件按尺寸码了三排。他说：零件归了位，机器才有面子。', weight: 2 },
+  // 察案院
+  { id: 'bn17', dept: 'chaanyuan', npcId: 'npc55', text: '持镜客把镜子擦了一遍又一遍。他说：镜子干净了，照出来的才不作数。', weight: 2 },
+  { id: 'bn18', dept: 'chaanyuan', npcId: 'npc56', text: '留痕生翻完卷宗，在册上记了一笔「无恙」。这两个字，是他笔下最轻的。', gift: { type: 'contrib', n: 6 } },
+  // 制香坊
+  { id: 'bn19', dept: 'zhixiangfang', npcId: 'npc57', text: '司炉主事尝了新香的烟气，半晌说了两个字：「可以。」——坊里都知道，这两个字要攒三个月。', gift: { type: 'bank', mins: 1 } },
+  { id: 'bn20', dept: 'zhixiangfang', npcId: 'npc58', text: '炉火稳稳烧了一夜，守灶翁添了三回柴。他说：火稳了，人就稳。', weight: 2 },
 ];
 
 export const EV_COMMON_COUNT = 32; // 通用（含 3 条转生梗前置事件）
 export const EV_DEPT_COUNT = 7; // 每房专属
-export const EV_TOTAL_COUNT = 102;
+export const EV_NPC_COUNT = 20; // M9.8 邸报本房化：每房 2 条具名同僚观察事件
+export const EV_TOTAL_COUNT = 122; // 102 + 20（M9.8）
 
 // need 前置口径（M7 扩充）：loop2 = 二周目起（state.loop >= 2）才进当日袋
 export const EV_NEED_CHECKS = {

@@ -22,6 +22,8 @@ import {
   type XianjiInfo,
 } from './api';
 import { playSfx, setSoundOn, soundOn, unlockAudio } from './audio';
+import Guide from './Guide';
+import OnboardingIntro from './OnboardingIntro';
 
 // ---------- 展示工具 ----------
 function fmt(n: number): string {
@@ -106,7 +108,7 @@ function SoundToggle() {
   );
 }
 
-function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
+function AuthScreen({ onAuthed }: { onAuthed: (registered: boolean) => void }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -122,7 +124,7 @@ function AuthScreen({ onAuthed }: { onAuthed: () => void }) {
           ? await api.login(username.trim(), password)
           : await api.register(username.trim(), password);
       setToken(r.token);
-      onAuthed();
+      onAuthed(mode === 'register');
     } catch (e) {
       setError(e instanceof Error ? e.message : '出了点状况');
     } finally {
@@ -245,7 +247,13 @@ function DeptSelectScreen({ loop, onChose }: { loop: number; onChose: () => void
   );
 }
 
-function GameScreen({ onLogout }: { onLogout: () => void }) {
+function GameScreen({
+  justRegistered,
+  onLogout,
+}: {
+  justRegistered: boolean;
+  onLogout: () => void;
+}) {
   const [me, setMe] = useState<AccountInfo | null>(null);
   const [config, setConfig] = useState<GameConfig | null>(null);
   const [state, setState] = useState<GameState | null>(null);
@@ -253,6 +261,10 @@ function GameScreen({ onLogout }: { onLogout: () => void }) {
   const [report, setReport] = useState<OfflineReport | null>(null);
   const [floats, setFloats] = useState<FloatText[]>([]);
   const [toast, setToast] = useState('');
+  // M9 入职文书（仅新注册号播一次）与新手引导（localStorage 记档，可回看）
+  const [introDone, setIntroDone] = useState(!justRegistered);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const guideAutoRef = useRef(false);
   const [srvRate, setSrvRate] = useState(0); // 服务端实时产出速率（含职级/功法）
   const [gCost, setGCost] = useState(0); // 通用槽研习费
   const [dgCost, setDgCost] = useState(0); // 部门槽研习费
@@ -295,6 +307,8 @@ function GameScreen({ onLogout }: { onLogout: () => void }) {
   }, [state?.pendingSpecial]);
   // ---------- M6.8 邸报 ----------
   const [dibaoOpen, setDibaoOpen] = useState(false); // 邸报展开浮层
+  // ---------- M9.5 博士支线「灯下」 ----------
+  const [lampOpen, setLampOpen] = useState(false); // 灯下卷轴是否展开
   // ---------- M5 ----------
   const [xianji, setXianji] = useState<XianjiInfo | null>(null); // 仙籍进度条（表面目标）
   const [xinshi, setXinshi] = useState(''); // 心事阶段文案（模糊，不暴露幻灭数值）
@@ -665,6 +679,25 @@ function GameScreen({ onLogout }: { onLogout: () => void }) {
     }
   }
 
+  // M9.5 博士支线：走近那盏灯（授号幂等，零数值；暗线只埋不揭）
+  async function walkLamp() {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setToast('');
+    try {
+      const r = await api.lamp();
+      applyPayload(r);
+      if (!r.already) {
+        spawnFloat('灯下同行');
+        playSfx('reward');
+      }
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : '还没走到那盏灯');
+    } finally {
+      busyRef.current = false;
+    }
+  }
+
   async function equipBag(idx: number) {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -803,6 +836,28 @@ function GameScreen({ onLogout }: { onLogout: () => void }) {
     }
   }
 
+  // M9 新手引导：首次带部门进主界面且该账号没看过 → 自动开播；
+  // 按账号记档（存名号而非布尔），同一浏览器换个新号照样重新播
+  useEffect(() => {
+    if (!state?.dept || !me?.username || guideAutoRef.current) return;
+    guideAutoRef.current = true;
+    try {
+      if (localStorage.getItem('ty_guide_done') !== me.username) setGuideOpen(true);
+    } catch {
+      setGuideOpen(true); // 隐身模式无 localStorage，照常播，不强求记档
+    }
+  }, [state?.dept, me?.username]);
+
+  function closeGuide(finished: boolean) {
+    setGuideOpen(false);
+    try {
+      localStorage.setItem('ty_guide_done', me?.username ?? '1');
+    } catch {
+      /* 隐身模式下无 localStorage，忽略 */
+    }
+    if (finished) setToast('老吏引路完毕——各处门道都写在区块小字里，得闲再看。');
+  }
+
   if (!state || !config) {
     return (
       <div className="panel">
@@ -821,10 +876,15 @@ function GameScreen({ onLogout }: { onLogout: () => void }) {
   }
   const dept = state.dept ? (deptList.find((d) => d.id === state.dept) ?? null) : null;
   if (!dept) {
+    // M9 入职文书：新建号先读一页背景故事再选房（老号登录与辞官转生不重播）
+    if (!introDone) return <OnboardingIntro onDone={() => setIntroDone(true)} />;
     return <DeptSelectScreen loop={state.loop ?? 1} onChose={() => refresh().catch(() => {})} />;
   }
 
   const xinliPct = (xinli / config.xinliMax) * 100;
+
+  // M9.5：四条暗线集齐，邸报条右侧才显出「灯下」——只埋不揭
+  const lampReady = (config.lampClues ?? []).every((id) => (state.clues ?? []).includes(id));
 
   return (
     <div className="game-dash">
@@ -889,7 +949,7 @@ function GameScreen({ onLogout }: { onLogout: () => void }) {
 
       {/* ---------- M6.8 衙门邸报：单行播报条 + 展开浮层（不占三栏宽度） ---------- */}
       {state ? (
-        <div className={`dibao-wrap${dibaoOpen ? ' open' : ''}`}>
+        <div className={`dibao-wrap${dibaoOpen ? ' open' : ''}${lampReady ? ' has-lamp' : ''}`}>
           {(() => {
             const evs = state.events ?? [];
             const unread = evs.filter((e) => e.ts > (state.evReadTs ?? 0)).length;
@@ -905,6 +965,18 @@ function GameScreen({ onLogout }: { onLogout: () => void }) {
               </button>
             );
           })()}
+          {lampReady ? (
+            <button
+              className="lamp-entry"
+              title="你听来的闲话里，似乎总有一盏灯还亮着"
+              onClick={() => {
+                setLampOpen(true);
+                playSfx('open');
+              }}
+            >
+              灯下
+            </button>
+          ) : null}
           {dibaoOpen ? (
             <div className="dibao-panel">
               {(state.events ?? []).length === 0 ? (
@@ -1913,6 +1985,47 @@ function GameScreen({ onLogout }: { onLogout: () => void }) {
         </div>
       ) : null}
 
+      {/* ---------- M9.5 博士支线「灯下」：线索回顾卷轴，走近那盏灯，答案留白 ---------- */}
+      {lampOpen ? (
+        <div className="modal-overlay" onClick={() => setLampOpen(false)}>
+          <div className="scroll-report lamp-scroll" onClick={(e) => e.stopPropagation()}>
+            <h2>灯下</h2>
+            {state.lampDone ? (
+              <>
+                <p className="lamp-text">
+                  那夜路过筹云司，灯还亮着。灯下有个背影，不看蓝图、不办事，只看着灯。他没回头，只说了句：「油添过了。你回去吧。」
+                </p>
+                <p className="lamp-text">
+                  你站了一会儿，终究没问他守的是什么——有些事问不出答案，只是总得有人看着。
+                </p>
+                <p className="dim">灯还亮着，一如往常。</p>
+              </>
+            ) : (
+              <>
+                <p className="dim lamp-hint">串门听来的闲话，拼在一起，似乎都指向同一盏灯。</p>
+                {(config.lampClueTexts ?? []).map((t, i) => (
+                  <p key={i} className="lamp-clue">
+                    {t}
+                  </p>
+                ))}
+                <button className="btn lamp-go" onClick={walkLamp}>
+                  走近那盏灯
+                </button>
+              </>
+            )}
+            <button
+              className="btn"
+              onClick={() => {
+                setLampOpen(false);
+                playSfx('close');
+              }}
+            >
+              合上卷轴
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* ---------- M5 旧账册：环境叙事，只展示已收残页 ---------- */}
       {ledgerPages !== null ? (
         <div className="modal-overlay" onClick={() => setLedgerPages(null)}>
@@ -1933,12 +2046,25 @@ function GameScreen({ onLogout }: { onLogout: () => void }) {
           </div>
         </div>
       ) : null}
+
+      {/* ---------- M9 新手引导：回看入口挨着音效开关；overlay 最后渲染压在最上 ---------- */}
+      <button
+        className="theme-toggle guide-toggle"
+        onClick={() => setGuideOpen(true)}
+        title="重看新手引导"
+        aria-label="重看新手引导"
+      >
+        引
+      </button>
+      {guideOpen ? <Guide onClose={closeGuide} /> : null}
     </div>
   );
 }
 
 export default function App() {
   const [authed, setAuthed] = useState(() => Boolean(getToken()));
+  // M9：注册建号标记，驱动入职文书（只对新注册播一次）
+  const [justRegistered, setJustRegistered] = useState(false);
 
   // M8：音频上下文要等首次用户交互（autoplay 策略），挂载时挂好解锁监听
   useEffect(() => {
@@ -1950,9 +2076,20 @@ export default function App() {
       <ThemeToggle />
       <SoundToggle />
       {authed ? (
-        <GameScreen onLogout={() => setAuthed(false)} />
+        <GameScreen
+          justRegistered={justRegistered}
+          onLogout={() => {
+            setAuthed(false);
+            setJustRegistered(false);
+          }}
+        />
       ) : (
-        <AuthScreen onAuthed={() => setAuthed(true)} />
+        <AuthScreen
+          onAuthed={(registered) => {
+            setJustRegistered(registered);
+            setAuthed(true);
+          }}
+        />
       )}
     </>
   );

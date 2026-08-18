@@ -44,7 +44,9 @@ import {
   equipBagItem,
   sellBagItem,
   fightJianzheng,
+  collectLamp,
 } from '../game/engine.js';
+import { LAMP_CLUES, LAMP_CLUE_TEXTS } from '../game/visits.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -117,6 +119,9 @@ router.get('/config', (_req, res) => {
     // ---------- M7.5 监正争夺战 ----------
     jianzhengCandidates: JIANZHENG_CANDIDATES, // 三位候选（含 intro/胜负文案），前端卷轴展示用
     jianzhengTitleId: JIANZHENG_TITLE_ID,
+    // ---------- M9.5 博士支线「灯下」 ----------
+    lampClues: LAMP_CLUES, // 线索 id 全集（前端判定集齐用）
+    lampClueTexts: LAMP_CLUE_TEXTS, // 线索原文（卷轴回顾用）
   });
 });
 
@@ -278,6 +283,17 @@ router.post('/quest/auto', (req, res) => {
 });
 
 // 成长消费全部手动（用户决议 2026-08-14）：/settings 自动开关端点已下线
+
+// M9.5 博士支线回收「灯下」：集齐四条暗线后走近那盏灯，授「灯下同行」纯展示称号
+router.post('/lamp', (req, res) => {
+  const ts = now();
+  const state = loadState(req.accountId);
+  advance(state, ts);
+  const result = collectLamp(state);
+  if (!result.ok) return res.status(400).json({ error: result.error });
+  persistState(req.accountId, state);
+  res.json({ ...statePayload(state), already: result.already });
+});
 
 // 串门子（M5.7；M6.1 洗牌袋+惩罚）：拜访他房听轶事，每日限次，半数回礼半数破点小财
 router.post('/visit', (req, res) => {

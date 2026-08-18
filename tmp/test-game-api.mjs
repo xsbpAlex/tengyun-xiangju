@@ -31,7 +31,7 @@ check('config M6.1 功法封顶与办差力贡献封顶', cfg.gongfaMax === 10 &
 check('config 同僚名册 58 位下发', Array.isArray(cfg.npcNames) && cfg.npcNames.length === 58 && !!cfg.npcNames[0].id && !!cfg.npcNames[0].name);
 check('config 官职十级制新字段', Array.isArray(cfg.rankLevelNeeds) && cfg.rankLevelNeeds.length === 7 && cfg.rankLevelNeeds[0][0] === 15 && cfg.rankLevelNeeds[0].length === 9 && cfg.rankExpQuestRatio === 0.2);
 check('config 已砍 poolCap/摸鱼', cfg.poolCap === undefined && cfg.moyuValue === undefined && cfg.moyuCooldownMs === undefined);
-check('config M6.5 全量称号 15 枚 + 词条表', Array.isArray(cfg.allTitles) && cfg.allTitles.length === 15 && cfg.titleWords?.saotong_tongzi?.salary === 0.01 && cfg.titleWords?.lingxiao_jueding?.xinliDrain === 0.05);
+check('config M6.5 全量称号 16 枚 + 词条表', Array.isArray(cfg.allTitles) && cfg.allTitles.length === 16 && cfg.titleWords?.saotong_tongzi?.salary === 0.01 && cfg.titleWords?.lingxiao_jueding?.xinliDrain === 0.05);
 check('config M6.5 凌霄千层/秘境日 3 次/词缀 4 条', cfg.ladderFloors === 1000 && cfg.realmPerDay === 3 && cfg.nightAffixes?.length === 4);
 
 // 2. 初始状态：两线资源形态
@@ -605,6 +605,44 @@ check('折卖 = 底值一半 + 强化等级（灵品+10 → 12）', r.status ===
     st.rank = 0; st.rankLvl = 1; st.gongfaLvl = 0; st.deptGongfaLvl = 0;
     st.gear = { hand: null, shield: null, soul: null, craft: null };
   });
+}
+
+// 19. M9.5 博士支线回收「灯下」：/lamp 集齐判定/授号/幂等
+{
+  const { DatabaseSync } = await import('node:sqlite');
+  const inject = async (mut) => {
+    const db = new DatabaseSync('d:/niuma/server/data/game.db');
+    const acct = db.prepare('SELECT id FROM accounts WHERE username = ?').get(name);
+    const row = db.prepare('SELECT payload FROM saves WHERE account_id = ?').get(acct.id);
+    const st = JSON.parse(row.payload);
+    mut(st);
+    const ts = Date.now();
+    db.prepare('UPDATE saves SET payload = ?, updated_at = ?, last_seen_at = ? WHERE account_id = ?')
+      .run(JSON.stringify(st), ts, ts, acct.id);
+    db.close();
+  };
+  check('config M9.5 线索全集与原文下发', Array.isArray(cfg.lampClues) && cfg.lampClues.length === 4 && Array.isArray(cfg.lampClueTexts) && cfg.lampClueTexts.length === 4 && cfg.lampClueTexts.every((t) => t.length > 0));
+
+  // 19.1 线索不齐被拒(400)
+  await inject((st) => { st.clues = ['bs1']; st.lampDone = false; });
+  r = await post('/api/game/lamp', auth, {});
+  d = await r.json();
+  check('M9.5 线索不齐被拒(400)', r.status === 400 && /还没拼成一条路/.test(d.error), d.error);
+
+  // 19.2 注入四条线索 → 回收成功：授号「灯下同行」+ 邸报留痕
+  await inject((st) => { st.clues = [...cfg.lampClues]; });
+  r = await post('/api/game/lamp', auth, {});
+  d = await r.json();
+  check('M9.5 集齐回收授号「灯下同行」', r.status === 200 && d.already === false && d.state.lampDone === true && d.state.titles.includes('dengxia_tongxing'));
+  check('M9.5 邸报授号留痕', d.state.events?.some((e) => e.type === 'milestone' && /灯下同行/.test(e.text)));
+
+  // 19.3 幂等：重复回收返回 already，称号不重发
+  r = await post('/api/game/lamp', auth, {});
+  d = await r.json();
+  check('M9.5 幂等重复回收返回 already', r.status === 200 && d.already === true && d.state.titles.filter((t) => t === 'dengxia_tongxing').length === 1);
+
+  // 清场：摘掉支线痕迹（账号稍后统一清理，这里先还原干净态）
+  await inject((st) => { st.clues = []; st.lampDone = false; st.titles = (st.titles ?? []).filter((t) => t !== 'dengxia_tongxing'); });
 }
 
 console.log(`\n结果：${pass} 通过 / ${fail} 失败`);
